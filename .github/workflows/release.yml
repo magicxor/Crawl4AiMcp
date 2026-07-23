@@ -1,0 +1,52 @@
+# On every semver tag (2.0.0 or a pre-release like 2.0.0-rc.1, no v prefix),
+# publishes the framework-dependent (arch- and OS-neutral IL) Crawl4AiMcp build
+# as tar.gz/zip assets on a GitHub Release, so consumers can pin a version and
+# run it with `dotnet Crawl4AiMcp.dll` (the published output includes
+# appsettings.json; point it at a crawl4ai instance via the Crawl4Ai__* env vars).
+#
+# There is deliberately NO container image: Crawl4AiMcp is a fully local stdio
+# MCP server spawned by an MCP client, not a self-sufficient network service.
+name: Release
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+-*'
+
+permissions:
+  contents: write
+
+jobs:
+  release-assets:
+    name: Publish release assets
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Publish Crawl4AiMcp
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          dotnet publish Crawl4AiMcp/Crawl4AiMcp.csproj \
+            -c Release -o publish /p:UseAppHost=false /p:Version="$VERSION"
+
+      - name: Pack assets
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          tar -czf "Crawl4AiMcp-$VERSION.tar.gz" -C publish .
+          (cd publish && zip -qr "../Crawl4AiMcp-$VERSION.zip" .)
+          sha256sum "Crawl4AiMcp-$VERSION.tar.gz" "Crawl4AiMcp-$VERSION.zip" > checksums.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          generate_release_notes: true
+          files: |
+            Crawl4AiMcp-*.tar.gz
+            Crawl4AiMcp-*.zip
+            checksums.txt

@@ -1,92 +1,48 @@
-# MCP Server
+# Crawl4AiMcp
 
-This README was created using the C# MCP server project template.
-It demonstrates how you can easily create an MCP server using C# and publish it as a NuGet package.
+Local **stdio MCP server** that proxies to a configured
+[crawl4ai](https://github.com/unclecode/crawl4ai) REST instance and writes the resulting
+artifacts (Markdown, HTML, screenshots, PDFs, crawl results) to a directory the calling
+agent specifies, returning only a compact summary (file paths, sizes, a short preview)
+instead of dumping base64 blobs or huge JSON/Markdown inline.
 
-The MCP server is built as a framework-dependent application and requires the .NET runtime to be installed on the target machine.
-The application is configured to roll-forward to the next highest major version of the runtime if one is available on the target machine.
-If an applicable .NET runtime is not available, the MCP server will not start.
-Consider building the MCP server as a self-contained application if you want to avoid this dependency.
+## Tools
 
-See [aka.ms/nuget/mcp/guide](https://aka.ms/nuget/mcp/guide) for the full guide.
+- `md` — page → Markdown (`.md`)
+- `html` — page → preprocessed HTML (`.html`)
+- `screenshot` — full-page PNG (`.png`)
+- `pdf` — page → PDF (`.pdf`)
+- `execute_js` — run JS, save full crawl result (`.json`), return the small `js_execution_result` inline
+- `crawl` — crawl 1–100 URLs, write per-URL `.md`/`.png`/`.pdf`/`.json`, return a manifest
+- `ask` — query crawl4ai's own code/docs context; **inline** results, `query` required
 
-Please note that this template is currently in an early preview stage. If you have feedback, please take a [brief survey](http://aka.ms/dotnet-mcp-template-survey).
+Every tool except `ask` requires an `outputDirectory` argument (created if missing).
 
-## Checklist before publishing to NuGet.org
+## Configuration
 
-- Test the MCP server locally using the steps below.
-- Update the package metadata in the .csproj file, in particular the `<PackageId>`.
-- Update `.mcp/server.json` to declare your MCP server's inputs.
-  - See [configuring inputs](https://aka.ms/nuget/mcp/guide/configuring-inputs) for more details.
-- Pack the project using `dotnet pack`.
+Set the target instance via the `Crawl4Ai` config section (env vars or `appsettings.json`):
 
-The `bin/Release` directory will contain the package file (.nupkg), which can be [published to NuGet.org](https://learn.microsoft.com/nuget/nuget-org/publish-a-package).
+- `Crawl4Ai__BaseUrl` — default `http://localhost:11235`
+- `Crawl4Ai__ApiToken` — bearer token; required unless the instance is open on loopback
+- `Crawl4Ai__TimeoutSeconds` — default `300`
 
-## Developing locally
+## Local development
 
-To test this MCP server from source code (locally) without using a built MCP server package, you can configure your IDE to run the project directly using `dotnet run`.
-
-```json
-{
-  "servers": {
-    "Crawl4AiMcp": {
-      "type": "stdio",
-      "command": "dotnet",
-      "args": [
-        "run",
-        "--project",
-        "<PATH TO PROJECT DIRECTORY>"
-      ]
-    }
-  }
-}
+```bash
+dotnet run --project Crawl4AiMcp
 ```
 
-Refer to the VS Code or Visual Studio documentation for more information on configuring and using MCP servers:
+Register with an MCP client over stdio, e.g. Claude Code:
 
-- [Use MCP servers in VS Code (Preview)](https://code.visualstudio.com/docs/copilot/chat/mcp-servers)
-- [Use MCP servers in Visual Studio (Preview)](https://learn.microsoft.com/visualstudio/ide/mcp-servers)
-
-## Testing the MCP Server
-
-Once configured, you can ask Copilot Chat for a random number, for example, `Give me 3 random numbers`. It should prompt you to use the `get_random_number` tool on the `Crawl4AiMcp` MCP server and show you the results.
-
-## Publishing to NuGet.org
-
-1. Run `dotnet pack -c Release` to create the NuGet package
-2. Publish to NuGet.org with `dotnet nuget push bin/Release/*.nupkg --api-key <your-api-key> --source https://api.nuget.org/v3/index.json`
-
-## Using the MCP Server from NuGet.org
-
-Once the MCP server package is published to NuGet.org, you can configure it in your preferred IDE. Both VS Code and Visual Studio use the `dnx` command to download and install the MCP server package from NuGet.org.
-
-- **VS Code**: Create a `<WORKSPACE DIRECTORY>/.vscode/mcp.json` file
-- **Visual Studio**: Create a `<SOLUTION DIRECTORY>\.mcp.json` file
-
-For both VS Code and Visual Studio, the configuration file uses the following server definition:
-
-```json
-{
-  "servers": {
-    "Crawl4AiMcp": {
-      "type": "stdio",
-      "command": "dnx",
-      "args": [
-        "<your package ID here>",
-        "--version",
-        "<your package version here>",
-        "--yes"
-      ]
-    }
-  }
-}
+```bash
+claude mcp add crawl4ai-local \
+  -e Crawl4Ai__BaseUrl=http://localhost:11235 \
+  -e Crawl4Ai__ApiToken=<your-token> \
+  -- dotnet run --project /abs/path/to/Crawl4AiMcp
 ```
 
-## More information
+## Packaging
 
-.NET MCP servers use the [ModelContextProtocol](https://www.nuget.org/packages/ModelContextProtocol) C# SDK. For more information about MCP:
-
-- [Official Documentation](https://modelcontextprotocol.io/)
-- [Protocol Specification](https://spec.modelcontextprotocol.io/)
-- [GitHub Organization](https://github.com/modelcontextprotocol)
-- [MCP C# SDK](https://modelcontextprotocol.github.io/csharp-sdk)
+This project is set up as an MCP-server NuGet tool (`PackAsTool`, `PackageType=McpServer`).
+Build a package with `dotnet pack -c Release`; the `.mcp/server.json` manifest describes the
+stdio transport and the `Crawl4Ai__*` environment variables.
