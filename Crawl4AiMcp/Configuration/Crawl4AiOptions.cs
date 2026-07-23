@@ -21,4 +21,12 @@ public sealed class Crawl4AiOptions
 
     /// <summary>HTTP timeout in seconds for crawl4ai requests. Crawls can be slow.</summary>
     public int TimeoutSeconds { get; set; } = 300;
+
+    /// <summary>
+    /// Regex patterns an output directory must match to be allowed for writing.
+    /// A directory is allowed when it matches <em>any</em> pattern. An empty list means
+    /// "deny all" — no tool may write anywhere until at least one pattern is configured.
+    /// Matched case-insensitively against the (validated, absolute) directory string.
+    /// </summary>
+    public List<string> AllowedOutputPatterns { get; set; } = new();
 }

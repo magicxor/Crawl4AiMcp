@@ -42,6 +42,7 @@ internal sealed class Crawl4AiTools
     {
         try
         {
+            _writer.EnsureOutputDirectoryAllowed(outputDirectory);
             var response = await _client.MarkdownAsync(new MarkdownRequest
             {
                 Url = url,
@@ -81,6 +82,7 @@ internal sealed class Crawl4AiTools
     {
         try
         {
+            _writer.EnsureOutputDirectoryAllowed(outputDirectory);
             var response = await _client.HtmlAsync(url, cancellationToken);
             var written = await _writer.WriteTextAsync(outputDirectory, fileName, url, ".html", response.Html, cancellationToken);
 
@@ -111,6 +113,7 @@ internal sealed class Crawl4AiTools
     {
         try
         {
+            _writer.EnsureOutputDirectoryAllowed(outputDirectory);
             var response = await _client.ScreenshotAsync(url, screenshotWaitFor, waitForImages, cancellationToken);
             var bytes = Convert.FromBase64String(response.Screenshot);
             var written = await _writer.WriteBytesAsync(outputDirectory, fileName, url, ".png", bytes, cancellationToken);
@@ -140,6 +143,7 @@ internal sealed class Crawl4AiTools
     {
         try
         {
+            _writer.EnsureOutputDirectoryAllowed(outputDirectory);
             var response = await _client.PdfAsync(url, cancellationToken);
             var bytes = Convert.FromBase64String(response.Pdf);
             var written = await _writer.WriteBytesAsync(outputDirectory, fileName, url, ".pdf", bytes, cancellationToken);
@@ -170,6 +174,7 @@ internal sealed class Crawl4AiTools
     {
         try
         {
+            _writer.EnsureOutputDirectoryAllowed(outputDirectory);
             var raw = await _client.ExecuteJsAsync(url, scripts, cancellationToken);
             var pretty = ArtifactWriter.PrettifyJson(raw);
             var written = await _writer.WriteTextAsync(outputDirectory, fileName, url, ".json", pretty, cancellationToken);
@@ -212,6 +217,7 @@ internal sealed class Crawl4AiTools
     {
         try
         {
+            _writer.EnsureOutputDirectoryAllowed(outputDirectory);
             var request = new CrawlRequest
             {
                 Urls = urls,

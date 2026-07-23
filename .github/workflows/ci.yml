@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: Build
+    name: Build & test
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
@@ -19,3 +19,6 @@ jobs:
 
       - name: Build solution
         run: dotnet build Crawl4AiMcp.slnx -c Release
+
+      - name: Test
+        run: dotnet test Crawl4AiMcp.slnx -c Release --no-build

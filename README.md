@@ -46,6 +46,37 @@ Configure the target crawl4ai instance via the `Crawl4Ai` config section — eit
 | `BaseUrl` | `Crawl4Ai__BaseUrl` | `http://localhost:11235` | crawl4ai REST base URL |
 | `ApiToken` | `Crawl4Ai__ApiToken` | *(empty)* | `Authorization: Bearer <token>`; required unless the instance is open on loopback |
 | `TimeoutSeconds` | `Crawl4Ai__TimeoutSeconds` | `300` | per-request HTTP timeout |
+| `AllowedOutputPatterns` | `Crawl4Ai__AllowedOutputPatterns__0`, `__1`, … | *(empty ⇒ deny all)* | regex allow-list for output directories (see below) |
+
+### Output path safety
+
+Every file write is guarded at a single choke point before anything touches the filesystem:
+
+1. **Absolute paths only** — `outputDirectory` must be fully qualified/rooted (e.g. `C:\out`,
+   `\\server\share\out`). Relative or drive-relative paths are rejected.
+2. **No traversal / trash segments** — any `.`, `..`, all-dots, empty (double-separator), or
+   invalid-character path segment is rejected outright. The path is validated as-is (never
+   normalized), so `..` is refused rather than silently collapsed. An optional `fileName` must
+   be a bare leaf name (no separators, not just dots).
+3. **Allow-list** — the directory must match at least one regex in `AllowedOutputPatterns`
+   (matched case-insensitively). **An empty list denies everything** — you must configure at
+   least one pattern before any tool can write. Invalid regexes fail fast at startup.
+
+Configure the allow-list in `appsettings.json`:
+
+```json
+{
+  "Crawl4Ai": {
+    "AllowedOutputPatterns": [
+      "^C:\\\\Users\\\\me\\\\crawl-out(\\\\|$)",
+      "^\\\\\\\\nas\\\\crawl(\\\\|$)"
+    ]
+  }
+}
+```
+
+or via environment variables (indexed): `Crawl4Ai__AllowedOutputPatterns__0=^C:\\out(\\|$)`.
+On any rejection the tool returns `{ "success": false, "error": "..." }` and writes nothing.
 
 ## Running it
 

@@ -25,6 +25,16 @@ Set the target instance via the `Crawl4Ai` config section (env vars or `appsetti
 - `Crawl4Ai__BaseUrl` — default `http://localhost:11235`
 - `Crawl4Ai__ApiToken` — bearer token; required unless the instance is open on loopback
 - `Crawl4Ai__TimeoutSeconds` — default `300`
+- `Crawl4Ai__AllowedOutputPatterns__0`, `__1`, … — regex allow-list for output directories
+
+### Output path safety
+
+Every write is validated before touching disk: `outputDirectory` must be absolute/rooted with
+no `.`/`..`/all-dots/empty/invalid segments (paths are validated as-is, never normalized), any
+`fileName` must be a bare leaf name, and the directory must match at least one regex in
+`AllowedOutputPatterns`. **An empty allow-list denies all writes** — configure at least one
+pattern. Invalid regexes fail fast at startup. On rejection the tool returns
+`{ "success": false, "error": "..." }` and writes nothing.
 
 ## Local development
 

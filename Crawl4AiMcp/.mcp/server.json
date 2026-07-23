@@ -30,6 +30,11 @@
           "description": "HTTP timeout in seconds for crawl4ai requests (default 300).",
           "isRequired": false,
           "default": "300"
+        },
+        {
+          "name": "Crawl4Ai__AllowedOutputPatterns__0",
+          "description": "First regex in the output-directory allow-list (case-insensitive). Add __1, __2, ... for more. An empty allow-list denies ALL writes, so at least one pattern is required for any tool to save files. Example: ^C:\\\\Users\\\\me\\\\crawl-out(\\\\|$)",
+          "isRequired": false
         }
       ]
     }
