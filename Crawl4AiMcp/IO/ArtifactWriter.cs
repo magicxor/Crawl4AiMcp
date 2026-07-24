@@ -137,7 +137,10 @@ public sealed partial class ArtifactWriter
 
     private static string Sanitize(string name)
     {
-        foreach (var invalid in Path.GetInvalidFileNameChars())
+        // Use the same portable invalid-char set as PathValidator (not the OS-specific
+        // Path.GetInvalidFileNameChars(), which is permissive on Linux) so a derived slug stays
+        // safe once the artifact reaches Telegram and the user's (possibly Windows) machine.
+        foreach (var invalid in PathValidator.InvalidNameChars)
             name = name.Replace(invalid, '-');
 
         name = name.Trim().Trim('.');
